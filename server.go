@@ -3,14 +3,19 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
 
-//Connections ...
-type Connections struct {
-	Connections []*websocket.Conn
-	Messages    []string
+type User struct {
+	name       string
+	connection *websocket.Conn
+}
+
+type Channel struct {
+	Users          []*User
+	MessageHistory [][]byte
 }
 
 var upgrader = websocket.Upgrader{
@@ -18,9 +23,19 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-var connections = Connections{}
+var MainChannel = Channel{}
 
-func echoHandler(w http.ResponseWriter, r *http.Request) {
+func main() {
+	http.HandleFunc("/message", messageHandler)
+	http.HandleFunc("/subscribe", subscribeHandler)
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		panic("ListenAndServe: " + err.Error())
+	}
+
+}
+
+func messageHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -32,42 +47,30 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 				fmt.Print(err.Error())
 				return
 			}
-			fmt.Println(connections.Connections)
-			for _, ws := range connections.Connections {
+			for _, user := range MainChannel.Users {
 				fmt.Println(string(msg))
-				fmt.Println(ws)
-				connections.Messages = append(connections.Messages, string(msg))
-				ws.WriteMessage(1, msg)
+				fmt.Print(user.connection)
+				MainChannel.MessageHistory = append(MainChannel.MessageHistory, msg)
+				user.connection.WriteMessage(1, msg)
 			}
 		}
 	}(conn)
 
 }
 
-func connectHandler(w http.ResponseWriter, r *http.Request) {
+func subscribeHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		fmt.Print(err.Error())
 	}
 	fmt.Println("connected", conn)
-	connections.Connections = append(connections.Connections, conn)
+	MainChannel.Users = append(MainChannel.Users, &User{name: "Bob", connection: conn})
 	sendOldMessages(conn)
 }
 
 func sendOldMessages(ws *websocket.Conn) {
-	for i, msg := range connections.Messages {
-		fmt.Println("------------------message-------------------")
-		fmt.Println(i, msg)
-		ws.WriteMessage(1, []byte(msg))
+	for _, msg := range MainChannel.MessageHistory {
+		time.Sleep(100 * time.Millisecond)
+		ws.WriteMessage(1, msg)
 	}
-}
-
-func main() {
-	http.HandleFunc("/echo", echoHandler)
-	http.HandleFunc("/connect", connectHandler)
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		panic("ListenAndServe: " + err.Error())
-	}
-
 }

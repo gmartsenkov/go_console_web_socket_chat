@@ -19,8 +19,8 @@ import "strings"
 
 var (
 	origin      = "http://localhost/"
-	url         = "ws://localhost:8080/echo"
-	connect_url = "ws://localhost:8080/connect"
+	url         = "ws://localhost:8080/message"
+	connect_url = "ws://localhost:8080/subscribe"
 	ctr         = 0
 	_, _        = fmt.Print("What is your name: ")
 	reader      = bufio.NewReader(os.Stdin)
@@ -52,7 +52,7 @@ func main() {
 
 func layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
-	if v_chat, err := g.SetView("chat", 0, 0, maxX-1, maxY/2+17); err != nil {
+	if v_chat, err := g.SetView("chat", 0, 0, maxX-1, (maxY/2)+(maxY/3)); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -61,7 +61,7 @@ func layout(g *gocui.Gui) error {
 		//go listenChatFile(v_chat)
 	}
 
-	if v, err := g.SetView("input", 0, maxY/2+18, maxX-1, maxY-1); err != nil {
+	if v, err := g.SetView("input", 0, (maxY/2)+maxY/3, maxX-1, maxY-1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
