@@ -10,6 +10,7 @@ import (
 //Connections ...
 type Connections struct {
 	Connections []*websocket.Conn
+	Messages    []string
 }
 
 var upgrader = websocket.Upgrader{
@@ -35,6 +36,7 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 			for _, ws := range connections.Connections {
 				fmt.Println(string(msg))
 				fmt.Println(ws)
+				connections.Messages = append(connections.Messages, string(msg))
 				ws.WriteMessage(1, msg)
 			}
 		}
@@ -49,6 +51,15 @@ func connectHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("connected", conn)
 	connections.Connections = append(connections.Connections, conn)
+	sendOldMessages(conn)
+}
+
+func sendOldMessages(ws *websocket.Conn) {
+	for i, msg := range connections.Messages {
+		fmt.Println("------------------message-------------------")
+		fmt.Println(i, msg)
+		ws.WriteMessage(1, []byte(msg))
+	}
 }
 
 func main() {
