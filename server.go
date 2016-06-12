@@ -65,7 +65,14 @@ func subscribeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("connected", conn)
 	MainChannel.Users = append(MainChannel.Users, &User{name: "Bob", connection: conn})
-	sendOldMessages(conn)
+	go notifyChannel("Bob")
+	go sendOldMessages(conn)
+}
+
+func notifyChannel(userName string) {
+	for _, user := range MainChannel.Users {
+		user.connection.WriteMessage(1, []byte(userName+" has connected\n"))
+	}
 }
 
 func sendOldMessages(ws *websocket.Conn) {
