@@ -9,7 +9,7 @@ import (
 )
 
 type User struct {
-	name       string
+	name       string `json:"name"`
 	connection *websocket.Conn
 }
 
@@ -49,7 +49,6 @@ func messageHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			for _, user := range MainChannel.Users {
 				fmt.Println(string(msg))
-				fmt.Print(user.connection)
 				MainChannel.MessageHistory = append(MainChannel.MessageHistory, msg)
 				user.connection.WriteMessage(1, msg)
 			}
@@ -63,9 +62,11 @@ func subscribeHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Print(err.Error())
 	}
-	fmt.Println("connected", conn)
-	MainChannel.Users = append(MainChannel.Users, &User{name: "Bob", connection: conn})
-	go notifyChannel("Bob")
+	user := User{}
+	conn.ReadJSON(&user)
+	fmt.Println(user)
+	MainChannel.Users = append(MainChannel.Users, &User{name: user.name, connection: conn})
+	go notifyChannel(user.name)
 	go sendOldMessages(conn)
 }
 

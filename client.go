@@ -24,7 +24,7 @@ var (
 	ctr         = 0
 	_, _        = fmt.Print("What is your name: ")
 	reader      = bufio.NewReader(os.Stdin)
-	Text, _     = reader.ReadString('\n')
+	NAME, _     = reader.ReadString('\n')
 )
 
 func main() {
@@ -80,18 +80,15 @@ func inputReader(g *gocui.Gui, v *gocui.View) (err error) {
 	}
 	dialer := websocket.Dialer{}
 	ws, _, err := dialer.Dial(url, nil)
-	name := strings.Replace(Text, "\n", "", -1)
-	message := []byte(name + ": (" + time.Now().Format(time.Kitchen) + ") : " + v.Buffer())
+	name := strings.Replace(NAME, "\n", "", -1)
+	message := name + ": (" + time.Now().Format(time.Kitchen) + ") : " + v.Buffer()
 	if err != nil {
 		fmt.Fprint(chat_view, "Server is not responding")
 		return
 	}
-
-	ws.WriteMessage(1, message)
-	if err != nil {
-		fmt.Fprint(chat_view, "Server is not responding")
-		return
-	}
+	user := User{name: name, message: message}
+	fmt.Println(user)
+	ws.WriteJSON(user)
 	v.Clear()
 	v.SetCursor(0, 0)
 	return nil
@@ -115,6 +112,11 @@ func listenForMessages(gui *gocui.Gui) {
 			})
 		}
 	}
+}
+
+type User struct {
+	name    string `json:"name"`
+	message string `json:"message"`
 }
 
 func quit(g *gocui.Gui, v *gocui.View) error {
