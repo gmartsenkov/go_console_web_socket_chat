@@ -28,6 +28,7 @@ var (
 )
 
 func main() {
+	NAME = strings.Replace(NAME, "\n", "", -1)
 	g := gocui.NewGui()
 	if err := g.Init(); err != nil {
 		log.Panicln(err)
@@ -80,15 +81,12 @@ func inputReader(g *gocui.Gui, v *gocui.View) (err error) {
 	}
 	dialer := websocket.Dialer{}
 	ws, _, err := dialer.Dial(url, nil)
-	name := strings.Replace(NAME, "\n", "", -1)
-	message := name + ": (" + time.Now().Format(time.Kitchen) + ") : " + v.Buffer()
+	message := NAME + ": (" + time.Now().Format(time.Kitchen) + ") : " + v.Buffer()
 	if err != nil {
 		fmt.Fprint(chat_view, "Server is not responding")
 		return
 	}
-	user := User{name: name, message: message}
-	fmt.Println(user)
-	ws.WriteJSON(user)
+	ws.WriteMessage(1, []byte(message))
 	v.Clear()
 	v.SetCursor(0, 0)
 	return nil
@@ -96,12 +94,12 @@ func inputReader(g *gocui.Gui, v *gocui.View) (err error) {
 
 func listenForMessages(gui *gocui.Gui) {
 	v, _ := gui.View("chat")
-	fmt.Print(websocket.BinaryMessage)
 	dialer := websocket.Dialer{}
 	ws, _, err := dialer.Dial(connect_url, nil)
 	if err != nil {
 		fmt.Fprint(v, "Server is not responding")
 	}
+	ws.WriteMessage(1, []byte(NAME))
 	for {
 		_, msg, err := ws.ReadMessage()
 		if err == nil {
