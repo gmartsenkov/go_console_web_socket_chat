@@ -9,7 +9,7 @@ import (
 )
 
 type User struct {
-	name       string
+	name       string `json:"name"`
 	connection *websocket.Conn
 }
 
@@ -47,10 +47,9 @@ func messageHandler(w http.ResponseWriter, r *http.Request) {
 				fmt.Print(err.Error())
 				return
 			}
+			MainChannel.MessageHistory = append(MainChannel.MessageHistory, msg)
 			for _, user := range MainChannel.Users {
 				fmt.Println(string(msg))
-				fmt.Print(user.connection)
-				MainChannel.MessageHistory = append(MainChannel.MessageHistory, msg)
 				user.connection.WriteMessage(1, msg)
 			}
 		}
@@ -63,15 +62,18 @@ func subscribeHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Print(err.Error())
 	}
-	fmt.Println("connected", conn)
-	MainChannel.Users = append(MainChannel.Users, &User{name: "Bob", connection: conn})
-	go notifyChannel("Bob")
+	_, name, _ := conn.ReadMessage()
+	fmt.Println(string(name) + " --- connected")
+	MainChannel.Users = append(MainChannel.Users, &User{name: string(name), connection: conn})
+	go notifyChannel(string(name), conn)
 	go sendOldMessages(conn)
 }
 
-func notifyChannel(userName string) {
+func notifyChannel(userName string, subscriberConn *websocket.Conn) {
 	for _, user := range MainChannel.Users {
-		user.connection.WriteMessage(1, []byte(userName+" has connected\n"))
+		if user.connection != subscriberConn {
+			user.connection.WriteMessage(1, []byte(userName+" has connected\n"))
+		}
 	}
 }
 
