@@ -112,11 +112,6 @@ func listenForMessages(gui *gocui.Gui) {
 	}
 }
 
-type User struct {
-	name    string `json:"name"`
-	message string `json:"message"`
-}
-
 func quit(g *gocui.Gui, v *gocui.View) error {
 	return gocui.ErrQuit
 }

@@ -9,7 +9,7 @@ import (
 )
 
 type User struct {
-	name       string `json:"name"`
+	name       string
 	connection *websocket.Conn
 }
 
