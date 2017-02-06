@@ -8,11 +8,13 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// User stores the name and connection socket
 type User struct {
 	name       string
 	connection *websocket.Conn
 }
 
+// Channel stores the users and message history for each channel
 type Channel struct {
 	Users          []*User
 	MessageHistory [][]byte
@@ -23,6 +25,7 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+// MainChannel is the main channel
 var MainChannel = Channel{}
 
 func main() {
