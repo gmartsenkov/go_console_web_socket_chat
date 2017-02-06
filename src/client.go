@@ -12,18 +12,21 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-const MESSAGE_ENDPOINT = "ws://localhost:8080/message"
-const SUBSCRIBE_ENDPOINT = "ws://localhost:8080/subscribe"
+// MessageEndpoint is the message endpoint on the server
+const MessageEndpoint = "ws://localhost:8080/message" 
+// SubscribeEndpoint is the subscription endpoint on the server
+const SubscribeEndpoint = "ws://localhost:8080/subscribe" 
 
 var (
-	USERNAME = ""
+	// Username is the user's name
+	Username = ""
 )
 
 func setup() {
 	fmt.Print("Enter your name: ")
 	reader := bufio.NewReader(os.Stdin)
-	USERNAME, _ = reader.ReadString('\n')
-	USERNAME = strings.Replace(USERNAME, "\n", "", -1)
+	Username, _ = reader.ReadString('\n')
+	Username = strings.Replace(Username, "\n", "", -1)
 }
 
 func setKeyBindings(g *gocui.Gui) {
@@ -55,11 +58,11 @@ func main() {
 
 func layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
-	if v_chat, err := g.SetView("chat", 0, 0, maxX-1, (maxY/2)+(maxY/3)); err != nil {
+	if chatView, err := g.SetView("chat", 0, 0, maxX-1, (maxY/2)+(maxY/3)); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
-		v_chat.Autoscroll = true
+		chatView.Autoscroll = true
 		go listenForMessages(g)
 		//go listenChatFile(v_chat)
 	}
@@ -82,8 +85,8 @@ func inputReader(g *gocui.Gui, v *gocui.View) (err error) {
 		return err
 	}
 	dialer := websocket.Dialer{}
-	ws, _, err := dialer.Dial(MESSAGE_ENDPOINT, nil)
-	message := USERNAME + ": (" + time.Now().Format(time.Kitchen) + ") : " + v.Buffer()
+	ws, _, err := dialer.Dial(MessageEndpoint, nil)
+	message := Username + ": (" + time.Now().Format(time.Kitchen) + ") : " + v.Buffer()
 	if err != nil {
 		fmt.Fprint(chatView, "Server is not responding")
 		return
@@ -97,11 +100,11 @@ func inputReader(g *gocui.Gui, v *gocui.View) (err error) {
 func listenForMessages(gui *gocui.Gui) {
 	v, _ := gui.View("chat")
 	dialer := websocket.Dialer{}
-	ws, _, err := dialer.Dial(SUBSCRIBE_ENDPOINT, nil)
+	ws, _, err := dialer.Dial(SubscribeEndpoint, nil)
 	if err != nil {
 		fmt.Fprint(v, "Server is not responding")
 	}
-	ws.WriteMessage(1, []byte(USERNAME))
+	ws.WriteMessage(1, []byte(Username))
 	for {
 		_, msg, err := ws.ReadMessage()
 		if err == nil {
